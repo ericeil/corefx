@@ -10,6 +10,7 @@
     <ProjectGuid>{8CBA022C-635F-4C8D-9D29-CD8AAC68C8E6}</ProjectGuid>
     <OutputType>Library</OutputType>
     <UnsupportedPlatforms>FreeBSD</UnsupportedPlatforms>
+    <IncludePerformanceTests>true</IncludePerformanceTests>
   </PropertyGroup>
   <!-- Help VS understand available configurations -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'" />
@@ -27,6 +28,7 @@
     <Compile Include="IPPacketInformationTest.cs" />
     <Compile Include="LingerStateTest.cs" />
     <Compile Include="NetworkStreamTest.cs" />
+    <Compile Include="Perf.cs" />
     <Compile Include="ReceiveMessageFrom.cs" />
     <Compile Include="ReceiveMessageFromAsync.cs" />
     <Compile Include="SelectTest.cs" />
