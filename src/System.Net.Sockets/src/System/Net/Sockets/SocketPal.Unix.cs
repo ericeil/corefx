@@ -865,6 +865,11 @@ namespace System.Net.Sockets
                         return err == Interop.Error.SUCCESS ? SocketError.Success : GetSocketErrorForErrorCode(err);
                     }
                 }
+                else if (optionName == SocketOptionName.DontFragment)
+                {
+                    err = Interop.Sys.SetIPv4DontFragmentOption(handle, optionValue);
+                    return err == Interop.Error.SUCCESS ? SocketError.Success : GetSocketErrorForErrorCode(err);
+                }
             }
 
             err = Interop.Sys.SetSockOpt(handle, optionLevel, optionName, (byte*)&optionValue, sizeof(int));
@@ -949,6 +954,8 @@ namespace System.Net.Sockets
 
         public static unsafe SocketError GetSockOpt(SafeCloseSocket handle, SocketOptionLevel optionLevel, SocketOptionName optionName, out int optionValue)
         {
+            Interop.Error err;
+
             if (optionLevel == SocketOptionLevel.Socket)
             {
                 if (optionName == SocketOptionName.ReceiveTimeout)
@@ -963,6 +970,15 @@ namespace System.Net.Sockets
                 }
             }
 
+            if (optionLevel == SocketOptionLevel.IP)
+            {
+                if (optionName == SocketOptionName.DontFragment)
+                {
+                    err = Interop.Sys.GetIPv4DontFragmentOption(handle, out optionValue);
+                    return err == Interop.Error.SUCCESS ? SocketError.Success : GetSocketErrorForErrorCode(err);
+                }
+            }
+
             if (optionName == SocketOptionName.Error)
             {
                 Interop.Error socketError = default(Interop.Error);
@@ -973,7 +989,7 @@ namespace System.Net.Sockets
 
             int value = 0;
             int optLen = sizeof(int);
-            Interop.Error err = Interop.Sys.GetSockOpt(handle, optionLevel, optionName, (byte*)&value, &optLen);
+            err = Interop.Sys.GetSockOpt(handle, optionLevel, optionName, (byte*)&value, &optLen);
 
             optionValue = value;
             return err == Interop.Error.SUCCESS ? SocketError.Success : GetSocketErrorForErrorCode(err);

@@ -2109,6 +2109,62 @@ SystemNative_SetSockOpt(intptr_t socket, int32_t socketOptionLevel, int32_t sock
     return err == 0 ? PAL_SUCCESS : SystemNative_ConvertErrorPlatformToPal(errno);
 }
 
+extern "C" Error
+SystemNative_SetIPv4DontFragmentOption(intptr_t socket, int32_t optionValue)
+{
+    int fd = ToFileDescriptor(socket);
+
+#if HAVE_IP_MTU_DISCOVER
+    int val = optionValue == 0 ? IP_PMTUDISC_DONT : IP_PMTUDISC_PROBE;
+    int err = setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &val, sizeof(val));
+    return err == 0 ? PAL_SUCCESS : SystemNative_ConvertErrorPlatformToPal(errno);
+#else
+    (void)optionValue; //unused
+    return PAL_ENOTSUP;
+#endif
+}
+
+extern "C" Error
+SystemNative_GetIPv4DontFragmentOption(intptr_t socket, int32_t* optionValue)
+{
+    int fd = ToFileDescriptor(socket);
+
+#if HAVE_IP_MTU_DISCOVER
+
+    int val;
+    socklen_t valSize = sizeof(val);
+    int err = getsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &val, &valSize);
+    if (err != 0)
+    {
+        return SystemNative_ConvertErrorPlatformToPal(errno);
+    }
+
+    switch (val)
+    {
+        // Depending on system config, sockets will default to one of the following.  If we see these, we didn't
+        // set IP_PMTUDISC_PROBE.
+    case IP_PMTUDISC_WANT:
+    case IP_PMTUDISC_DONT:
+        *optionValue = 0;
+        break;
+
+    case IP_PMTUDISC_PROBE:
+        *optionValue = 1;
+        break;
+
+    default:
+        assert(false);
+        break;
+    }
+
+    return PAL_SUCCESS;
+
+#else
+    *optionValue = 0;
+    return PAL_ENOTSUP;
+#endif
+}
+
 static bool TryConvertSocketTypePalToPlatform(int32_t palSocketType, int* platformSocketType)
 {
     assert(platformSocketType != nullptr);

@@ -361,6 +361,10 @@ extern "C" Error SystemNative_GetIPv6MulticastOption(intptr_t socket, int32_t mu
 
 extern "C" Error SystemNative_SetIPv6MulticastOption(intptr_t socket, int32_t multicastOption, IPv6MulticastOption* option);
 
+extern "C" Error SystemNative_GetIPv4DontFragmentOption(intptr_t socket, int32_t* optionValue);
+
+extern "C" Error SystemNative_SetIPv4DontFragmentOption(intptr_t socket, int32_t optionValue);
+
 extern "C" Error SystemNative_GetLingerOption(intptr_t socket, LingerOption* option);
 
 extern "C" Error SystemNative_SetLingerOption(intptr_t socket, LingerOption* option);
