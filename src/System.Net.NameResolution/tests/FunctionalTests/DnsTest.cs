@@ -154,7 +154,6 @@ namespace System.Net.NameResolution.Tests
             yield return new object[] { IPAddress.None };
         }
 
-        [ActiveIssue(10345, PlatformID.AnyUnix)]
         [Theory]
         [MemberData(nameof(GetNoneAddresses))]
         public async Task Dns_GetHostEntryAsync_NoneIPAddress_Fail(IPAddress address)
