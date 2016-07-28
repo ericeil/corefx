@@ -160,8 +160,8 @@ namespace System.Net.NameResolution.Tests
         {
             string addressString = address.ToString();
 
-            await Assert.ThrowsAsync<SocketException>(() => Dns.GetHostEntryAsync(address));
-            await Assert.ThrowsAsync<SocketException>(() => Dns.GetHostEntryAsync(addressString));
+            await Assert.ThrowsAnyAsync<SocketException>(() => Dns.GetHostEntryAsync(address));
+            await Assert.ThrowsAnyAsync<SocketException>(() => Dns.GetHostEntryAsync(addressString));
         }
     }
 }
