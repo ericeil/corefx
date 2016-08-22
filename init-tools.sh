@@ -64,7 +64,7 @@ if [ ! -e $__INIT_TOOLS_DONE_MARKER ]; then
         fi
         cd $__DOTNET_PATH
         tar -xf $__DOTNET_PATH/dotnet.tar
-
+		find . -name \*.so -exec sudo execstack -c '{}' \;
         cd $__scriptpath
     fi
 
