@@ -573,7 +573,7 @@ namespace System.IO.Tests
             }
         }
 
-        [Fact]
+        [ConditionalFact(nameof(PlatformDetection) + "." + nameof(PlatformDetection.IsNotWindowsSubsystemForLinux))] // https://github.com/Microsoft/BashOnWindows/issues/216
         [PlatformSpecific(PlatformID.Linux)]
         public void FileSystemWatcher_CreateManyConcurrentWatches()
         {
@@ -607,7 +607,7 @@ namespace System.IO.Tests
             }
         }
 
-        [Fact]
+        [ConditionalFact(nameof(PlatformDetection) + "." + nameof(PlatformDetection.IsNotWindowsSubsystemForLinux))] // https://github.com/Microsoft/BashOnWindows/issues/216
         public void FileSystemWatcher_StopCalledOnBackgroundThreadDoesNotDeadlock()
         {
             // Check the case where Stop or Dispose (they do the same thing) is called from 
@@ -643,7 +643,7 @@ namespace System.IO.Tests
             }
         }
 
-        [Fact]
+        [ConditionalFact(nameof(PlatformDetection) + "." + nameof(PlatformDetection.IsNotWindowsSubsystemForLinux))] // https://github.com/Microsoft/BashOnWindows/issues/216
         public void FileSystemWatcher_WatchingAliasedFolderResolvesToRealPathWhenWatching()
         {
             using (var testDirectory = new TempDirectory(GetTestFilePath()))

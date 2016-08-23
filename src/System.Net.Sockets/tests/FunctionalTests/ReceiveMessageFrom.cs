@@ -8,7 +8,7 @@ namespace System.Net.Sockets.Tests
 {
     public class ReceiveMessageFrom
     {
-        [Fact]
+        [ConditionalFact(nameof(PlatformDetection) + "." + nameof(PlatformDetection.IsNotWindowsSubsystemForLinux))] // https://github.com/Microsoft/BashOnWindows/issues/987
         public void Success()
         {
             if (Socket.OSSupportsIPv4)
