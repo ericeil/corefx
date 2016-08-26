@@ -66,7 +66,7 @@ namespace System.IO.FileSystem.DriveInfoTests
             var root = new DriveInfo("/");
             Assert.True(root.AvailableFreeSpace > 0);
             var format = root.DriveFormat;
-            Assert.Equal(DriveType.Fixed, root.DriveType);
+            Assert.Equal(PlatformDetection.IsWindowsSubsystemForLinux ? DriveType.Unknown : DriveType.Fixed, root.DriveType);
             Assert.True(root.IsReady);
             Assert.Equal("/", root.Name);
             Assert.Equal("/", root.ToString());
