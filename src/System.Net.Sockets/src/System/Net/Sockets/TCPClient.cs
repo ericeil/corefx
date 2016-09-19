@@ -12,12 +12,37 @@ namespace System.Net.Sockets
     // is used to create a Client connection to a remote host.
     public partial class TcpClient : IDisposable
     {
-        private readonly AddressFamily _family;
+        private AddressFamily _family;
         private Socket _clientSocket;
         private NetworkStream _dataStream;
         private bool _cleanedUp = false;
         private bool _active;
 
+        // Initializes a new instance of the System.Net.Sockets.TcpClient class with the specified end point.
+        public TcpClient(IPEndPoint localEP)
+        {
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Enter(NetEventSource.ComponentType.Socket, this, nameof(TcpClient), localEP);
+            }
+
+            if (localEP == null)
+            {
+                throw new ArgumentNullException(nameof(localEP));
+            }
+
+            // IPv6: Establish address family before creating a socket
+            _family = localEP.AddressFamily;
+
+            InitializeClientSocket();
+            Client.Bind(localEP);
+
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Exit(NetEventSource.ComponentType.Socket, this, nameof(TcpClient), "");
+            }
+        }
+        
         // Initializes a new instance of the System.Net.Sockets.TcpClient class.
         public TcpClient() : this(AddressFamily.InterNetwork)
         {
@@ -43,6 +68,51 @@ namespace System.Net.Sockets
             if (NetEventSource.Log.IsEnabled())
             {
                 NetEventSource.Exit(NetEventSource.ComponentType.Socket, this, "TcpClient", null);
+            }
+        }
+
+        // Initializes a new instance of the System.Net.Sockets.TcpClient class and connects to the specified port on 
+        // the specified host.
+        public TcpClient(string hostname, int port)
+        {
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Enter(NetEventSource.ComponentType.Socket, this, nameof(TcpClient), hostname);
+            }
+
+            if (hostname == null)
+            {
+                throw new ArgumentNullException(nameof(hostname));
+            }
+
+            if (!TcpValidationHelpers.ValidatePortNumber(port))
+            {
+                throw new ArgumentOutOfRangeException(nameof(port));
+            }
+            //
+            // IPv6: Delay creating the client socket until we have
+            //       performed DNS resolution and know which address
+            //       families we can use.
+            //
+            //InitializeClientSocket();
+
+            try
+            {
+                Connect(hostname, port);
+            }
+
+            catch
+            {
+                if (_clientSocket != null)
+                {
+                    _clientSocket.Close();
+                }
+                throw;
+            }
+
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Exit(NetEventSource.ComponentType.Socket, this, nameof(TcpClient), null);
             }
         }
 
@@ -88,6 +158,229 @@ namespace System.Net.Sockets
             set { ExclusiveAddressUseCore = value; }
         }
 
+        // Connects the Client to the specified port on the specified host.
+        public void Connect(string hostname, int port)
+        {
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Enter(NetEventSource.ComponentType.Socket, this, nameof(Connect), hostname);
+            }
+            if (_cleanedUp)
+            {
+                throw new ObjectDisposedException(this.GetType().FullName);
+            }
+            if (hostname == null)
+            {
+                throw new ArgumentNullException(nameof(hostname));
+            }
+            if (!TcpValidationHelpers.ValidatePortNumber(port))
+            {
+                throw new ArgumentOutOfRangeException(nameof(port));
+            }
+
+            // Check for already connected and throw here. This check
+            // is not required in the other connect methods as they
+            // will throw from WinSock. Here, the situation is more
+            // complex since we have to resolve a hostname so it's
+            // easier to simply block the request up front.
+            if (_active)
+            {
+                throw new SocketException((int)SocketError.IsConnected);
+            }
+
+            // IPv6: We need to process each of the addresses return from
+            //       DNS when trying to connect. Use of AddressList[0] is
+            //       bad form.
+
+            IPAddress[] addresses = Dns.GetHostAddresses(hostname);
+            Exception lastex = null;
+            Socket ipv6Socket = null;
+            Socket ipv4Socket = null;
+
+            try
+            {
+                if (_clientSocket == null)
+                {
+                    if (Socket.OSSupportsIPv4)
+                    {
+                        ipv4Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    }
+                    if (Socket.OSSupportsIPv6)
+                    {
+                        ipv6Socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                    }
+                }
+
+                foreach (IPAddress address in addresses)
+                {
+                    try
+                    {
+                        if (_clientSocket == null)
+                        {
+                            // We came via the <hostname,port> constructor. Set the
+                            // address family appropriately, create the socket and
+                            // try to connect.
+                            if (address.AddressFamily == AddressFamily.InterNetwork && ipv4Socket != null)
+                            {
+                                ipv4Socket.Connect(address, port);
+                                _clientSocket = ipv4Socket;
+                                if (ipv6Socket != null)
+                                {
+                                    ipv6Socket.Close();
+                                }
+                            }
+                            else if (ipv6Socket != null)
+                            {
+                                ipv6Socket.Connect(address, port);
+                                _clientSocket = ipv6Socket;
+                                if (ipv4Socket != null)
+                                {
+                                    ipv4Socket.Close();
+                                }
+                            }
+
+                            _family = address.AddressFamily;
+                            _active = true;
+                            break;
+                        }
+                        else if (address.AddressFamily == _family)
+                        {
+                            // Only use addresses with a matching family
+                            Connect(new IPEndPoint(address, port));
+                            _active = true;
+                            break;
+                        }
+                    }
+
+                    catch (Exception ex)
+                    {
+                        if (ex is OutOfMemoryException)
+                        {
+                            throw;
+                        }
+                        lastex = ex;
+                    }
+                }
+            }
+
+            catch (Exception ex)
+            {
+                if (ex is OutOfMemoryException)
+                {
+                    throw;
+                }
+                lastex = ex;
+            }
+
+            finally
+            {
+
+                //cleanup temp sockets if failed
+                //main socket gets closed when tcpclient gets closed
+
+                //did we connect?
+                if (!_active)
+                {
+                    if (ipv6Socket != null)
+                    {
+                        ipv6Socket.Close();
+                    }
+
+                    if (ipv4Socket != null)
+                    {
+                        ipv4Socket.Close();
+                    }
+
+
+                    // The connect failed - rethrow the last error we had
+                    if (lastex != null)
+                    {
+                        throw lastex;
+                    }
+                    else
+                    {
+                        throw new SocketException((int)SocketError.NotConnected);
+                    }
+                }
+            }
+
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Exit(NetEventSource.ComponentType.Socket, this, nameof(Connect), null);
+            }
+        }
+
+        // Connects the Client to the specified port on the specified host.
+        public void Connect(IPAddress address, int port)
+        {
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Enter(NetEventSource.ComponentType.Socket, this, nameof(Connect), address);
+            }
+            if (_cleanedUp)
+            {
+                throw new ObjectDisposedException(this.GetType().FullName);
+            }
+            if (address == null)
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+            if (!TcpValidationHelpers.ValidatePortNumber(port))
+            {
+                throw new ArgumentOutOfRangeException(nameof(port));
+            }
+
+            IPEndPoint remoteEP = new IPEndPoint(address, port);
+            Connect(remoteEP);
+
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Exit(NetEventSource.ComponentType.Socket, this, nameof(Connect), null);
+            }
+        }
+
+        // Connect the Client to the specified end point.
+        public void Connect(IPEndPoint remoteEP)
+        {
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Enter(NetEventSource.ComponentType.Socket, this, nameof(Connect), remoteEP);
+            }
+            if (_cleanedUp)
+            {
+                throw new ObjectDisposedException(this.GetType().FullName);
+            }
+            if (remoteEP == null)
+            {
+                throw new ArgumentNullException(nameof(remoteEP));
+            }
+
+            Client.Connect(remoteEP);
+            _active = true;
+
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Exit(NetEventSource.ComponentType.Socket, this, nameof(Connect), null);
+            }
+        }
+
+        //methods
+        public void Connect(IPAddress[] ipAddresses, int port)
+        {
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Enter(NetEventSource.ComponentType.Socket, this, nameof(Connect), ipAddresses);
+            }
+
+            Client.Connect(ipAddresses, port);
+            _active = true;
+
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Exit(NetEventSource.ComponentType.Socket, this, nameof(Connect), null);
+            }
+        }
+
         public Task ConnectAsync(IPAddress address, int port)
         {
             return Task.Factory.FromAsync(
@@ -108,7 +401,7 @@ namespace System.Net.Sockets
             return ConnectAsyncCore(addresses, port);
         }
 
-        private IAsyncResult BeginConnect(IPAddress address, int port, AsyncCallback requestCallback, object state)
+        public IAsyncResult BeginConnect(IPAddress address, int port, AsyncCallback requestCallback, object state)
         {
             if (NetEventSource.Log.IsEnabled())
             {
@@ -124,7 +417,39 @@ namespace System.Net.Sockets
             return result;
         }
 
-        private void EndConnect(IAsyncResult asyncResult)
+        public IAsyncResult BeginConnect(string host, int port, AsyncCallback requestCallback, object state)
+        {
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Enter(NetEventSource.ComponentType.Socket, this, "BeginConnect", host);
+            }
+
+            IAsyncResult result = Client.BeginConnect(host, port, requestCallback, state);
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Exit(NetEventSource.ComponentType.Socket, this, "BeginConnect", null);
+            }
+
+            return result;
+        }
+
+        public IAsyncResult BeginConnect(IPAddress[] addresses, int port, AsyncCallback requestCallback, object state)
+        {
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Enter(NetEventSource.ComponentType.Socket, this, "BeginConnect", addresses);
+            }
+
+            IAsyncResult result = Client.BeginConnect(addresses, port, requestCallback, state);
+            if (NetEventSource.Log.IsEnabled())
+            {
+                NetEventSource.Exit(NetEventSource.ComponentType.Socket, this, "BeginConnect", null);
+            }
+
+            return result;
+        }
+
+        public void EndConnect(IAsyncResult asyncResult)
         {
             if (NetEventSource.Log.IsEnabled())
             {

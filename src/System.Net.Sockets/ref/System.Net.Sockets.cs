@@ -483,6 +483,8 @@ namespace System.Net.Sockets
     {
         public TcpClient() { }
         public TcpClient(System.Net.Sockets.AddressFamily family) { }
+        public TcpClient(System.Net.IPEndPoint localEP) { }
+        public TcpClient(string hostname, int port) { }
         protected bool Active { get { return default(bool); } set { } }
         public int Available { get { return default(int); } }
         public System.Net.Sockets.Socket Client { get { return default(System.Net.Sockets.Socket); } set { } }
@@ -494,12 +496,19 @@ namespace System.Net.Sockets
         public int ReceiveTimeout { get { return default(int); } set { } }
         public int SendBufferSize { get { return default(int); } set { } }
         public int SendTimeout { get { return default(int); } set { } }
+        public IAsyncResult BeginConnect(IPAddress address, int port, AsyncCallback requestCallback, object state) { return default(IAsyncResult); }
+        public IAsyncResult BeginConnect(IPAddress[] addresses, int port, AsyncCallback requestCallback, object state) { return default(IAsyncResult); }
+        public IAsyncResult BeginConnect(string host, int port, AsyncCallback requestCallback, object state) { return default(IAsyncResult); }
+        public void Connect(string hostname, int port) { }
+        public void Connect(IPAddress address, int port) { }
+        public void Connect(IPEndPoint remoteEP) { }
         public System.Threading.Tasks.Task ConnectAsync(System.Net.IPAddress address, int port) { return default(System.Threading.Tasks.Task); }
         public System.Threading.Tasks.Task ConnectAsync(System.Net.IPAddress[] addresses, int port) { return default(System.Threading.Tasks.Task); }
         public System.Threading.Tasks.Task ConnectAsync(string host, int port) { return default(System.Threading.Tasks.Task); }
         public void Dispose() { }
         protected virtual void Dispose(bool disposing) { }
         ~TcpClient() { }
+        public void EndConnect(IAsyncResult asyncResult) { }
         public System.Net.Sockets.NetworkStream GetStream() { return default(System.Net.Sockets.NetworkStream); }
     }
     public partial class TcpListener
