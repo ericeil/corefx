@@ -532,14 +532,22 @@ namespace System.Net.Sockets
         public bool ExclusiveAddressUse { get { return default(bool); } set { } }
         public bool MulticastLoopback { get { return default(bool); } set { } }
         public short Ttl { get { return default(short); } set { } }
+        public IAsyncResult BeginReceive(AsyncCallback requestCallback, object state) { return default(IAsyncResult); }
+        public IAsyncResult BeginSend(byte[] datagram, int bytes, AsyncCallback requestCallback, object state) { return default(IAsyncResult); }
+        public IAsyncResult BeginSend(byte[] datagram, int bytes, IPEndPoint endPoint, AsyncCallback requestCallback, object state) { return default(IAsyncResult); }
+        public IAsyncResult BeginSend(byte[] datagram, int bytes, string hostname, int port, AsyncCallback requestCallback, object state) { return default(IAsyncResult); }
+        public void Close() { }
         public void Dispose() { }
         protected virtual void Dispose(bool disposing) { }
         public void DropMulticastGroup(System.Net.IPAddress multicastAddr) { }
         public void DropMulticastGroup(System.Net.IPAddress multicastAddr, int ifindex) { }
+        public byte[] EndReceive(IAsyncResult asyncResult, ref IPEndPoint remoteEP) { remoteEP = default(IPEndPoint); return default(byte[]); }
+        public int EndSend(IAsyncResult asyncResult) { return default(int); }
         public void JoinMulticastGroup(int ifindex, System.Net.IPAddress multicastAddr) { }
         public void JoinMulticastGroup(System.Net.IPAddress multicastAddr) { }
         public void JoinMulticastGroup(System.Net.IPAddress multicastAddr, int timeToLive) { }
         public void JoinMulticastGroup(System.Net.IPAddress multicastAddr, System.Net.IPAddress localAddress) { }
+        public byte[] Receive(ref IPEndPoint remoteEP) { return default(byte[]); }
         public System.Threading.Tasks.Task<System.Net.Sockets.UdpReceiveResult> ReceiveAsync() { return default(System.Threading.Tasks.Task<System.Net.Sockets.UdpReceiveResult>); }
         public System.Threading.Tasks.Task<int> SendAsync(byte[] datagram, int bytes, System.Net.IPEndPoint endPoint) { return default(System.Threading.Tasks.Task<int>); }
         public System.Threading.Tasks.Task<int> SendAsync(byte[] datagram, int bytes, string hostname, int port) { return default(System.Threading.Tasks.Task<int>); }
