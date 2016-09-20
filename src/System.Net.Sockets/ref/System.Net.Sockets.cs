@@ -524,6 +524,7 @@ namespace System.Net.Sockets
         public UdpClient(int port, System.Net.Sockets.AddressFamily family) { }
         public UdpClient(System.Net.IPEndPoint localEP) { }
         public UdpClient(System.Net.Sockets.AddressFamily family) { }
+        public UdpClient(string hostname, int port) { }
         protected bool Active { get { return default(bool); } set { } }
         public int Available { get { return default(int); } }
         public System.Net.Sockets.Socket Client { get { return default(System.Net.Sockets.Socket); } set { } }
@@ -537,6 +538,9 @@ namespace System.Net.Sockets
         public IAsyncResult BeginSend(byte[] datagram, int bytes, IPEndPoint endPoint, AsyncCallback requestCallback, object state) { return default(IAsyncResult); }
         public IAsyncResult BeginSend(byte[] datagram, int bytes, string hostname, int port, AsyncCallback requestCallback, object state) { return default(IAsyncResult); }
         public void Close() { }
+        public void Connect(IPAddress addr, int port) { }
+        public void Connect(IPEndPoint endPoint) { }
+        public void Connect(string hostname, int port) { }
         public void Dispose() { }
         protected virtual void Dispose(bool disposing) { }
         public void DropMulticastGroup(System.Net.IPAddress multicastAddr) { }

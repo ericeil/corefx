@@ -100,6 +100,25 @@ namespace System.Net.Sockets
             _clientSocket.Bind(localEP);
         }
 
+        public UdpClient(string hostname, int port)
+        {
+            if (hostname == null)
+            {
+                throw new ArgumentNullException(nameof(hostname));
+            }
+            if (!TcpValidationHelpers.ValidatePortNumber(port))
+            {
+                throw new ArgumentOutOfRangeException(nameof(port));
+            }
+            //
+            // NOTE: Need to create different kinds of sockets based on the addresses
+            //       returned from DNS. As a result, we defer the creation of the 
+            //       socket until the Connect method.
+            //
+            //CreateClientSocket();
+            Connect(hostname, port);
+        }
+
         // Used by the class to indicate that a connection to a remote host has been made.
         protected bool Active
         {
