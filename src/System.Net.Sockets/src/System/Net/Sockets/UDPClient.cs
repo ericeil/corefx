@@ -194,6 +194,11 @@ namespace System.Net.Sockets
             }
         }
 
+        public void Close()
+        {
+            Dispose(true);
+        }
+
         private bool _cleanedUp = false;
         private void FreeResources()
         {
@@ -268,7 +273,7 @@ namespace System.Net.Sockets
             }
         }
 
-        internal IAsyncResult BeginSend(byte[] datagram, int bytes, IPEndPoint endPoint, AsyncCallback requestCallback, object state)
+        public IAsyncResult BeginSend(byte[] datagram, int bytes, IPEndPoint endPoint, AsyncCallback requestCallback, object state)
         {
             // Validate input parameters.
             if (_cleanedUp)
@@ -301,7 +306,7 @@ namespace System.Net.Sockets
             return _clientSocket.BeginSendTo(datagram, 0, bytes, SocketFlags.None, endPoint, requestCallback, state);
         }
 
-        internal IAsyncResult BeginSend(byte[] datagram, int bytes, string hostname, int port, AsyncCallback requestCallback, object state)
+        public IAsyncResult BeginSend(byte[] datagram, int bytes, string hostname, int port, AsyncCallback requestCallback, object state)
         {
             if (_active && ((hostname != null) || (port != 0)))
             {
@@ -331,12 +336,12 @@ namespace System.Net.Sockets
             return BeginSend(datagram, bytes, ipEndPoint, requestCallback, state);
         }
 
-        internal IAsyncResult BeginSend(byte[] datagram, int bytes, AsyncCallback requestCallback, object state)
+        public IAsyncResult BeginSend(byte[] datagram, int bytes, AsyncCallback requestCallback, object state)
         {
             return BeginSend(datagram, bytes, null, requestCallback, state);
         }
 
-        internal int EndSend(IAsyncResult asyncResult)
+        public int EndSend(IAsyncResult asyncResult)
         {
             if (_cleanedUp)
             {
@@ -353,7 +358,48 @@ namespace System.Net.Sockets
             }
         }
 
-        internal IAsyncResult BeginReceive(AsyncCallback requestCallback, object state)
+        public byte[] Receive(ref IPEndPoint remoteEP)
+        {
+            //
+            // parameter validation
+            //
+            if (_cleanedUp)
+            {
+                throw new ObjectDisposedException(this.GetType().FullName);
+            }
+
+            // this is a fix due to the nature of the ReceiveFrom() call and the 
+            // ref parameter convention, we need to cast an IPEndPoint to it's base
+            // class EndPoint and cast it back down to IPEndPoint. ugly but it works.
+            //
+            EndPoint tempRemoteEP;
+
+            if (_family == AddressFamily.InterNetwork)
+            {
+                tempRemoteEP = IPEndPointStatics.Any;
+            }
+            else
+            {
+                tempRemoteEP = IPEndPointStatics.IPv6Any;
+            }
+
+            int received = Client.ReceiveFrom(_buffer, MaxUDPSize, 0, ref tempRemoteEP);
+            remoteEP = (IPEndPoint)tempRemoteEP;
+
+
+            // because we don't return the actual length, we need to ensure the returned buffer
+            // has the appropriate length.
+
+            if (received < MaxUDPSize)
+            {
+                byte[] newBuffer = new byte[received];
+                Buffer.BlockCopy(_buffer, 0, newBuffer, 0, received);
+                return newBuffer;
+            }
+            return _buffer;
+        }
+
+        public IAsyncResult BeginReceive(AsyncCallback requestCallback, object state)
         {
             // Validate input parameters.
             if (_cleanedUp)
@@ -377,7 +423,7 @@ namespace System.Net.Sockets
             return _clientSocket.BeginReceiveFrom(_buffer, 0, MaxUDPSize, SocketFlags.None, ref tempRemoteEP, requestCallback, state);
         }
 
-        internal byte[] EndReceive(IAsyncResult asyncResult, ref IPEndPoint remoteEP)
+        public byte[] EndReceive(IAsyncResult asyncResult, ref IPEndPoint remoteEP)
         {
             if (_cleanedUp)
             {
