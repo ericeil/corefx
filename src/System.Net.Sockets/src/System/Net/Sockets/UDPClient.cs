@@ -243,6 +243,173 @@ namespace System.Net.Sockets
             }
         }
 
+        public void Connect(string hostname, int port)
+        {
+            if (_cleanedUp)
+            {
+                throw new ObjectDisposedException(this.GetType().FullName);
+            }
+            if (hostname == null)
+            {
+                throw new ArgumentNullException(nameof(hostname));
+            }
+            if (!TcpValidationHelpers.ValidatePortNumber(port))
+            {
+                throw new ArgumentOutOfRangeException(nameof(port));
+            }
+
+            // We must now look for addresses that use a compatible address family to the client socket. However, in the 
+            // case of the <hostname,port> constructor we will have deferred creating the socket and will do that here 
+            // instead.
+
+            IPAddress[] addresses = Dns.GetHostAddresses(hostname);
+
+            Exception lastex = null;
+            Socket ipv6Socket = null;
+            Socket ipv4Socket = null;
+
+            try
+            {
+                if (_clientSocket == null)
+                {
+                    if (Socket.OSSupportsIPv4)
+                    {
+                        ipv4Socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                    }
+                    if (Socket.OSSupportsIPv6)
+                    {
+                        ipv6Socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                    }
+                }
+
+
+                foreach (IPAddress address in addresses)
+                {
+                    try
+                    {
+                        if (_clientSocket == null)
+                        {
+                            // We came via the <hostname,port> constructor. Set the
+                            // address family appropriately, create the socket and
+                            // try to connect.
+                            if (address.AddressFamily == AddressFamily.InterNetwork && ipv4Socket != null)
+                            {
+                                ipv4Socket.Connect(address, port);
+                                _clientSocket = ipv4Socket;
+                                if (ipv6Socket != null)
+                                {
+                                    ipv6Socket.Close();
+                                }
+                            }
+                            else if (ipv6Socket != null)
+                            {
+                                ipv6Socket.Connect(address, port);
+                                _clientSocket = ipv6Socket;
+                                if (ipv4Socket != null)
+                                {
+                                    ipv4Socket.Close();
+                                }
+                            }
+
+
+                            _family = address.AddressFamily;
+                            _active = true;
+                            break;
+                        }
+                        else if (address.AddressFamily == _family)
+                        {
+                            // Only use addresses with a matching family
+                            Connect(new IPEndPoint(address, port));
+                            _active = true;
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ExceptionCheck.IsFatal(ex))
+                        {
+                            throw;
+                        }
+                        lastex = ex;
+                    }
+                }
+            }
+
+            catch (Exception ex)
+            {
+                if (ExceptionCheck.IsFatal(ex))
+                {
+                    throw;
+                }
+                lastex = ex;
+            }
+            finally
+            {
+                //cleanup temp sockets if failed
+                //main socket gets closed when tcpclient gets closed
+
+                //did we connect?
+                if (!_active)
+                {
+                    if (ipv6Socket != null)
+                    {
+                        ipv6Socket.Close();
+                    }
+
+                    if (ipv4Socket != null)
+                    {
+                        ipv4Socket.Close();
+                    }
+
+                    // The connect failed - rethrow the last error we had
+                    if (lastex != null)
+                    {
+                        throw lastex;
+                    }
+                    else
+                    {
+                        throw new SocketException((int)SocketError.NotConnected);
+                    }
+                }
+            }
+        }
+
+        public void Connect(IPAddress addr, int port)
+        {
+            if (_cleanedUp)
+            {
+                throw new ObjectDisposedException(this.GetType().FullName);
+            }
+            if (addr == null)
+            {
+                throw new ArgumentNullException(nameof(addr));
+            }
+            if (!TcpValidationHelpers.ValidatePortNumber(port))
+            {
+                throw new ArgumentOutOfRangeException(nameof(port));
+            }
+
+            IPEndPoint endPoint = new IPEndPoint(addr, port);
+
+            Connect(endPoint);
+        }
+
+        public void Connect(IPEndPoint endPoint)
+        {
+            if (_cleanedUp)
+            {
+                throw new ObjectDisposedException(this.GetType().FullName);
+            }
+            if (endPoint == null)
+            {
+                throw new ArgumentNullException(nameof(endPoint));
+            }
+
+            CheckForBroadcast(endPoint.Address);
+            Client.Connect(endPoint);
+            _active = true;
+        }
+
         private bool _isBroadcast;
         private void CheckForBroadcast(IPAddress ipAddress)
         {
