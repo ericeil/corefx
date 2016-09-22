@@ -7,6 +7,8 @@
   <PropertyGroup>
     <AssemblyName>System.Net.Sockets</AssemblyName>
     <ProjectGuid>{43311AFB-D7C4-4E5A-B1DE-855407F90D1B}</ProjectGuid>
+    <AssemblyVersion Condition="'$(TargetGroup)'=='netcore50'">4.1.1.0</AssemblyVersion>
+    <ContractProject Condition="'$(AssemblyVersion)'=='4.1.1.0'">../ref/4.1.0/System.Net.Sockets.depproj</ContractProject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableWinRT Condition="'$(TargetGroup)' == 'netcore50'">true</EnableWinRT>
     <IsPartialFacadeAssembly Condition="'$(TargetGroup)' == 'net46'">true</IsPartialFacadeAssembly>
@@ -22,7 +24,7 @@
   <PropertyGroup Condition="'$(EnableWinRT)' == 'true'">
     <DefineConstants>$(DefineConstants);NETNATIVE</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetGroup)' == ''">
+  <PropertyGroup Condition="'$(AssemblyVersion)'!='4.1.1.0'">
     <DefineConstants>$(DefineConstants);netstandard17</DefineConstants>
   </PropertyGroup>
   <!-- Help VS understand available configurations -->
