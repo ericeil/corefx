@@ -6,7 +6,7 @@ using System;
 
 namespace System.Net.Sockets
 {
-    //[Serializable]
+    [Serializable]
     public struct SocketInformation
     {
         private byte[] _protocolInformation;

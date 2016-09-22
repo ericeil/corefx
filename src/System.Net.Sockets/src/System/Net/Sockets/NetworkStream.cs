@@ -614,7 +614,7 @@ namespace System.Net.Sockets
         // Returns:
         // 
         //     An IASyncResult, representing the read.
-        public IAsyncResult BeginRead(byte[] buffer, int offset, int size, AsyncCallback callback, Object state)
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int size, AsyncCallback callback, Object state)
         {
 #if DEBUG
             using (GlobalLog.SetThreadKind(ThreadKinds.User | ThreadKinds.Async))
@@ -727,7 +727,7 @@ namespace System.Net.Sockets
         // Returns:
         // 
         //     The number of bytes read. May throw an exception.
-        public int EndRead(IAsyncResult asyncResult)
+        public override int EndRead(IAsyncResult asyncResult)
         {
 #if DEBUG
             using (GlobalLog.SetThreadKind(ThreadKinds.User))
@@ -785,7 +785,7 @@ namespace System.Net.Sockets
         // Returns:
         // 
         //     An IASyncResult, representing the write.
-        public IAsyncResult BeginWrite(byte[] buffer, int offset, int size, AsyncCallback callback, Object state)
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int size, AsyncCallback callback, Object state)
         {
 #if DEBUG
             using (GlobalLog.SetThreadKind(ThreadKinds.User | ThreadKinds.Async))
@@ -908,7 +908,7 @@ namespace System.Net.Sockets
         // This method is called when an async write is completed. All we
         // do is call through to the core socket EndSend functionality.
         // Returns:  The number of bytes read. May throw an exception.
-        public void EndWrite(IAsyncResult asyncResult)
+        public override void EndWrite(IAsyncResult asyncResult)
         {
 #if DEBUG
             using (GlobalLog.SetThreadKind(ThreadKinds.User))
