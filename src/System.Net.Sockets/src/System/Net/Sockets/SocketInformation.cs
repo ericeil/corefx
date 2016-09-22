@@ -12,7 +12,7 @@ namespace System.Net.Sockets
         private byte[] _protocolInformation;
         private SocketInformationOptions _options;
 
-        //[OptionalField]
+        [OptionalField]
         private EndPoint _remoteEndPoint;
 
         public byte[] ProtocolInformation

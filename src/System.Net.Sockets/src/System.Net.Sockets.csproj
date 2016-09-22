@@ -441,6 +441,14 @@
       <Link>Interop\Unix\System.Native\Interop.Write.cs</Link>
     </Compile>
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetGroup)'=='netstandard1.3' Or '$(TargetGroup)' == 'netcore50'">
+    <Compile Include="$(CommonPath)\System\OptionalFieldAttribute.cs">
+      <Link>Common\System\OptionalFieldAttribute.cs"</Link>
+    </Compile>
+    <Compile Include="$(CommonPath)\System\SerializableAttribute.cs">
+      <Link>Common\System\SerializableAttribute.cs"</Link>
+    </Compile>
+  </ItemGroup>
   <ItemGroup Condition="'$(TargetGroup)' == 'net46'">
     <!-- .NET Framework -->
     <TargetingPackReference Include="mscorlib" />
