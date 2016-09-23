@@ -234,6 +234,12 @@ namespace System.Net.Sockets.Tests
             return receiveSocket;
         }
 
+        [Fact]
+        public void ReuseAddress_Success()
+        {
+            ReuseAddress(null, true, true, false);
+        }
+
         [Theory]
         [InlineData(null, null, null, true)]
         [InlineData(null, null, false, true)]
@@ -259,7 +265,7 @@ namespace System.Net.Sockets.Tests
                     a.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, firstSocketReuseAddress.Value);
                 }
 
-                a.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                a.Bind(new IPEndPoint(IPAddress.Any, 0));
 
                 using (Socket b = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                 {
