@@ -276,7 +276,7 @@ namespace System.Net.Sockets.Tests
                     a.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, firstSocketReuseAddress.Value);
                 }
 
-                a.Bind(new IPEndPoint(IPAddress.Any, 0));
+                a.Bind(new IPEndPoint(IPAddress.Loopback, 0));
 
                 using (Socket b = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                 {
