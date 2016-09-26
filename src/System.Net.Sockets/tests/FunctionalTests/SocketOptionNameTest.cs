@@ -237,7 +237,18 @@ namespace System.Net.Sockets.Tests
         [Fact]
         public void ReuseAddress_Success()
         {
-            ReuseAddress(null, true, true, false);
+            using (Socket a = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
+            {
+                a.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
+                a.Bind(new IPEndPoint(IPAddress.Any, 0));
+
+                using (Socket b = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
+                {
+                    b.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                    b.Bind(a.LocalEndPoint);
+                }
+            }
         }
 
         [Theory]
